@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Random Signal Generator</title>
+<style>
+:root{--bg:#0f1420;--card:#1a2133;--tx:#e8ecf5;--mut:#8b95ab;--buy:#22c55e;--sell:#ef4444;--ac:#3b82f6;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f4f6fb;--card:#fff;--tx:#111827;--mut:#667085}}
+:root[data-theme="dark"]{--bg:#0f1420;--card:#1a2133;--tx:#e8ecf5;--mut:#8b95ab}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,sans-serif;padding:16px}
+.w{max-width:560px;margin:0 auto}h1{font-size:20px;margin:0 0 4px}.s{color:var(--mut);font-size:13px;margin-bottom:14px}
+.c{background:var(--card);border-radius:12px;padding:14px;margin-bottom:12px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:10px}label{font-size:12px;color:var(--mut);display:block;margin-bottom:4px}
+select,input{width:100%;padding:9px;border-radius:8px;border:1px solid #8884;background:var(--bg);color:var(--tx);font-size:14px}
+button{padding:10px 14px;border:0;border-radius:8px;background:var(--ac);color:#fff;font-weight:600;font-size:14px;cursor:pointer}
+button.o{background:transparent;border:1px solid #8886;color:var(--tx)}.r{display:flex;gap:8px;margin-top:12px}.r button{flex:1}
+.row{display:flex;justify-content:space-between;align-items:center;padding:10px 4px;border-bottom:1px solid #8882;font-size:14px}
+.row:last-child{border:0}.t{font-variant-numeric:tabular-nums;color:var(--mut)}
+.b{padding:3px 12px;border-radius:99px;font-weight:700;font-size:12px;color:#fff}.BUY{background:var(--buy)}.SELL{background:var(--sell)}
+.e{color:var(--mut);text-align:center;padding:16px;font-size:14px}.n{font-size:11px;color:var(--mut);text-align:center;margin-top:10px}
+.sm{display:flex;flex-wrap:wrap;gap:12px;font-size:13px;padding:4px 4px 10px;border-bottom:1px solid #8882}
+.rb{display:flex;gap:6px}.rb button{padding:4px 12px;font-size:12px;background:transparent;border:1px solid #8886;color:var(--tx)}
+.rb .win.on{background:var(--buy);border-color:var(--buy);color:#fff}.rb .loss.on{background:var(--sell);border-color:var(--sell);color:#fff}
+</style></head><body><div class="w">
+<h1>🎲 Random Signal Generator</h1>
+<div class="s">Time ekka random BUY / SELL list ekak hadanawa (GMT)</div>
+<div class="c"><div class="g">
+<div><label>Market</label><select id="m"><option>Volatility 10</option><option>Volatility 25</option><option>Volatility 50</option><option>Volatility 75</option><option>Volatility 100</option><option>EUR/USD</option><option>XAU/USD</option></select></div>
+<div><label>Start time (24h, GMT = Deriv time)</label><input id="st" type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM (24h)"></div>
+<div><label>Duration (hours / peya)</label><input id="d" type="number" value="22" min="1" max="24"></div>
+<div><label>Gap between signals (min)</label><input id="gp" type="number" value="5" min="1" max="120"></div>
+</div>
+<div class="r"><button onclick="gen()">Generate</button><button class="o" onclick="cp()">Copy</button></div></div>
+<div class="c" id="o"><div class="e">Generate button eka gahanna</div></div>
+<div class="n">Random output — real analysis ekak nemei. Real money walata use karanna epa.</div>
+</div>
+<script>
+var d=new Date(),p=function(n){return String(n).padStart(2,"0")};
+document.getElementById("st").value=p(d.getUTCHours())+":"+p(d.getUTCMinutes());
+var ck=document.createElement("div");ck.className="s";ck.style.marginTop="-6px";
+document.querySelector(".s").after(ck);
+function tick(){var n=new Date();ck.textContent="Deriv time (GMT) now: "+p(n.getUTCHours())+":"+p(n.getUTCMinutes())+":"+p(n.getUTCSeconds())}
+tick();setInterval(tick,1000);
+var list=[];
+function gen(){
+ var v=function(i){return document.getElementById(i).value};
+ var mk=v("m"),dur=(+v("d")||22)*60,gap=+v("gp")||5,hm=(v("st")||"00:00").split(":");
+ var t=(+hm[0])*60+(+hm[1]);list=[];
+ for(var k=0;k<=dur;k+=gap){
+  var x=(t+k)%1440;
+  list.push({time:p(Math.floor(x/60))+":"+p(x%60),side:Math.random()<0.5?"BUY":"SELL",mk:mk});
+ }
+ render();save();
+}
+function render(){
+ var o=document.getElementById("o");o.innerHTML="";
+ var w=list.filter(function(s){return s.res==="WIN"}).length,l=list.filter(function(s){return s.res==="LOSS"}).length;
+ var sm=document.createElement("div");sm.className="sm";
+ sm.innerHTML='<span>✅ Win: '+w+'</span><span>❌ Loss: '+l+'</span><span>Win rate: '+(w+l?Math.round(w*100/(w+l)):0)+'%</span><span>Pending: '+(list.length-w-l)+'</span>';
+ o.appendChild(sm);
+ list.forEach(function(s,i){
+  var r=document.createElement("div");r.className="row";
+  r.innerHTML='<span class="t">'+s.time+'</span><span class="b '+s.side+'">'+s.side+'</span><span class="rb"><button class="win'+(s.res==="WIN"?" on":"")+'" onclick="setR('+i+',\'WIN\')">Win</button><button class="loss'+(s.res==="LOSS"?" on":"")+'" onclick="setR('+i+',\'LOSS\')">Loss</button></span>';
+  o.appendChild(r);
+ });
+}
+function setR(i,v){list[i].res=list[i].res===v?null:v;render();save();}
+function save(){try{var g=function(i){return document.getElementById(i).value};localStorage.setItem("rsg1",JSON.stringify({list:list,m:g("m"),st:g("st"),d:g("d"),gp:g("gp")}))}catch(e){}}
+(function(){try{var x=JSON.parse(localStorage.getItem("rsg1")||"null");if(x&&x.list&&x.list.length){list=x.list;["m","st","d","gp"].forEach(function(k){if(x[k])document.getElementById(k).value=x[k]});render()}}catch(e){}})();
+function cp(){
+ if(!list.length)return;
+ var txt=list.map(function(s){return s.time+" - "+s.mk+" - "+s.side+(s.res?" - "+s.res:"")}).join("\n");
+ try{navigator.clipboard.writeText(txt)}catch(e){}
+}
+</script></body></html>
