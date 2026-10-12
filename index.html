@@ -28,6 +28,7 @@ button.o{background:transparent;border:1px solid #8886;color:var(--tx)}.r{displa
 <div><label>Start time (24h, GMT = Deriv time)</label><input id="st" type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM (24h)"></div>
 <div><label>Duration (hours / peya)</label><input id="d" type="number" value="22" min="1" max="24"></div>
 <div><label>Gap between signals (min)</label><input id="gp" type="number" value="5" min="1" max="120"></div>
+<div><label>Mode</label><select id="md"><option value="R">Random (BUY + SELL)</option><option value="B">All BUY</option><option value="S">All SELL</option></select></div>
 </div>
 <div class="r"><button onclick="gen()">Generate</button><button class="o" onclick="cp()">Copy</button></div></div>
 <div class="c" id="o"><div class="e">Generate button eka gahanna</div></div>
@@ -43,11 +44,11 @@ tick();setInterval(tick,1000);
 var list=[];
 function gen(){
  var v=function(i){return document.getElementById(i).value};
- var mk=v("m"),dur=(+v("d")||22)*60,gap=+v("gp")||5,hm=(v("st")||"00:00").split(":");
+ var md=v("md"),mk=v("m"),dur=(+v("d")||22)*60,gap=+v("gp")||5,hm=(v("st")||"00:00").split(":");
  var t=(+hm[0])*60+(+hm[1]);list=[];
  for(var k=0;k<=dur;k+=gap){
   var x=(t+k)%1440;
-  list.push({time:p(Math.floor(x/60))+":"+p(x%60),side:Math.random()<0.5?"BUY":"SELL",mk:mk});
+  list.push({time:p(Math.floor(x/60))+":"+p(x%60),side:md==="B"?"BUY":md==="S"?"SELL":(Math.random()<0.5?"BUY":"SELL"),mk:mk});
  }
  render();save();
 }
@@ -64,8 +65,8 @@ function render(){
  });
 }
 function setR(i,v){list[i].res=list[i].res===v?null:v;render();save();}
-function save(){try{var g=function(i){return document.getElementById(i).value};localStorage.setItem("rsg1",JSON.stringify({list:list,m:g("m"),st:g("st"),d:g("d"),gp:g("gp")}))}catch(e){}}
-(function(){try{var x=JSON.parse(localStorage.getItem("rsg1")||"null");if(x&&x.list&&x.list.length){list=x.list;["m","st","d","gp"].forEach(function(k){if(x[k])document.getElementById(k).value=x[k]});render()}}catch(e){}})();
+function save(){try{var g=function(i){return document.getElementById(i).value};localStorage.setItem("rsg1",JSON.stringify({list:list,m:g("m"),st:g("st"),d:g("d"),gp:g("gp"),md:g("md")}))}catch(e){}}
+(function(){try{var x=JSON.parse(localStorage.getItem("rsg1")||"null");if(x&&x.list&&x.list.length){list=x.list;["m","st","d","gp","md"].forEach(function(k){if(x[k])document.getElementById(k).value=x[k]});render()}}catch(e){}})();
 function cp(){
  if(!list.length)return;
  var txt=list.map(function(s){return s.time+" - "+s.mk+" - "+s.side+(s.res?" - "+s.res:"")}).join("\n");
